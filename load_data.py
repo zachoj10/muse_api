@@ -78,7 +78,7 @@ def query_api(num_pages_to_query=None):
 
             for location in result["locations"]:
                 ### Pop `Flexible / Remote` from the list of locations and set as a bool
-                if location['name'] == 'Flexible / Remote':
+                if location["name"] == "Flexible / Remote":
                     is_remote_eligible = True
                     continue
                 location_list.append(location["name"])
@@ -94,7 +94,7 @@ def query_api(num_pages_to_query=None):
 
             job_id = result["id"]
 
-            ### Some expectations were made about the structure in the `refs` and `levels` fields 
+            ### Some expectations were made about the structure in the `refs` and `levels` fields
             ### added tests to insure assumptions hold
             test_expected_response("refs", job_id, result["refs"])
             test_expected_response("levels", job_id, result["levels"])
@@ -108,7 +108,7 @@ def query_api(num_pages_to_query=None):
                 "short_name": result["short_name"],
                 "model_type": result["model_type"],
                 "locations": location_list,
-                'is_remote_eligible': is_remote_eligible,
+                "is_remote_eligible": is_remote_eligible,
                 "categories": category_list,
                 "landing_page": result["refs"]["landing_page"],
                 "company_id": company_object["company_id"],
