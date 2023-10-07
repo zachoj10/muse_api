@@ -6,10 +6,10 @@
 ## Installation
 - Create virtual environment and install dependencies from `requirements.txt`: 
     ```python
-        python3 -m venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-
+    python3 -m venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
 - If using an API Key, it must be set as an environment variable 
     - Edit `venv/bin/active` script 
     - Add line `export MUSE_API_KEY="{MUSE_API_KEY_HERE}"`
@@ -18,17 +18,18 @@
 ### Important Packages
 - Pandas: Used to store and format data between extraction and loading in a destination database
 - [DuckDB]('https://duckdb.org'): Used as a local SQL database to store API results for later querying 
-
 ## Running The Script
-    ```
-        python load_data.py
-
+```python
+python load_data.py
+```
 ### Optional Arguments
-    -p --pages The number of pages to query from the API. If omitted, the script will continue to query until all available pages are exhausted. Note, the script will always start with page 0.
+```
+-p --pages The number of pages to query from the API. If omitted, the script will continue to query until all available pages are exhausted. Note, the script will always start with page 0.
+``````
 
 ## Querying Output
-    - The script saves a copy of the resulting database to `muse_jobs.duckdb`. 
-    - I used [DBeaver](https://dbeaver.io) to connect to the database and write queries against it 
+- The script saves a copy of the resulting database to `muse_jobs.duckdb`. 
+- I used [DBeaver](https://dbeaver.io) to connect to the database and write queries against it 
 
 ### Database Schema
 - Two tables are defined
