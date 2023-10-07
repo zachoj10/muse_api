@@ -17,7 +17,7 @@
 
 ### Important Packages
 - Pandas: Used to store and format data between extraction and loading in a destination database
-- [DuckDB]('https://duckdb.org'): Used as a local SQL database to store API results for later querying 
+- [DuckDB](https://duckdb.org): Used as a local SQL database to store API results for later querying 
 ## Running The Script
 ```python
 python load_data.py
