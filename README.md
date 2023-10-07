@@ -30,6 +30,7 @@ python load_data.py
 ## Querying Output
 - The script saves a copy of the resulting database to `muse_jobs.duckdb`. 
 - I used [DBeaver](https://dbeaver.io) to connect to the database and write queries against it 
+- See query for sample problem in `query.sql`
 
 ### Database Schema
 - Two tables are defined
