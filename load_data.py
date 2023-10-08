@@ -5,6 +5,7 @@ import os
 import argparse
 import time
 import warnings
+import sys
 
 BASE_URL = "https://www.themuse.com/api/public/jobs?page={0}"
 DB_FILENAME = "muse_jobs.duckdb"
@@ -14,7 +15,13 @@ api_key = os.environ.get("MUSE_API_KEY")
 
 
 def connect_to_db():
-    con = duckdb.connect(DB_FILENAME)
+    try:
+        con = duckdb.connect(DB_FILENAME)
+
+    except duckdb.duckdb.IOException:
+        sys.exit(
+            f"An active connection to the database is blocking the connection to {DB_FILENAME}. Please close other connections and try again"
+        )
 
     return con
 
@@ -36,11 +43,9 @@ def test_expected_response(field_name, job_id, data):
 
 
 def query_api(num_pages_to_query=None):
-    api_key_string = API_KEY_ARG.format(api_key)
+    # With more time, I'd want to work on breaking this function into some smaller parts
 
-    num_pages_to_query = (
-        num_pages_to_query if num_pages_to_query is not None else float("inf")
-    )
+    api_key_string = API_KEY_ARG.format(api_key)
 
     print(f"Will query {num_pages_to_query} pages")
 
@@ -52,15 +57,19 @@ def query_api(num_pages_to_query=None):
     while running:
         print(f"Querying page {page_num}...")
 
+        # format API url for page #
         to_query = BASE_URL.format(page_num) + (
             api_key_string if api_key is not None else ""
         )
 
         response = requests.get(to_query)
 
+        # Extract API response data about # of calls remaining
         requests_remaining = response.headers.get("X-Ratelimit-Remaining")
         request_reset_seconds = response.headers.get("X-Ratelimit-Reset")
 
+        # Handle API Response code. This is especially necessary because in my
+        # testing the API won't accept pages over 99
         if response.status_code != 200:
             print(f"Exiting API due to error. Response code: {response.status_code}")
             break
@@ -71,13 +80,14 @@ def query_api(num_pages_to_query=None):
 
         results = output["results"]
 
+        # Iterate through job objects and parse into dictionaries
         for result in results:
             location_list = []
             is_remote_eligible = False
             category_list = []
 
             for location in result["locations"]:
-                ### Pop `Flexible / Remote` from the list of locations and set as a bool
+                # Pop `Flexible / Remote` from the list of locations and set as a bool
                 if location["name"] == "Flexible / Remote":
                     is_remote_eligible = True
                     continue
@@ -94,8 +104,8 @@ def query_api(num_pages_to_query=None):
 
             job_id = result["id"]
 
-            ### Some expectations were made about the structure in the `refs` and `levels` fields
-            ### added tests to insure assumptions hold
+            # Some expectations were made about the structure in the `refs`
+            # and `levels` fields added tests to insure assumptions hold
             test_expected_response("refs", job_id, result["refs"])
             test_expected_response("levels", job_id, result["levels"])
 
@@ -120,12 +130,14 @@ def query_api(num_pages_to_query=None):
 
         page_num += 1
 
+        # Handle API rate limit
         if requests_remaining == 0:
             time.sleep(request_reset_seconds)
 
         if page_num >= min(total_pages, num_pages_to_query):
             running = False
 
+    ##Convert to DataFrame for easy  loading into duckdb
     jobs = pd.DataFrame(jobs_list)
     company_df = pd.DataFrame(companies.values())
 
@@ -133,9 +145,9 @@ def query_api(num_pages_to_query=None):
 
 
 def main(pages_to_load):
-    jobs, company_df = query_api(pages_to_load)
-
     con = connect_to_db()
+
+    jobs, company_df = query_api(pages_to_load)
 
     save_to_table(jobs, con, "jobs")
     save_to_table(company_df, con, "companies")
@@ -153,6 +165,7 @@ if __name__ == "__main__":
         help="""The number of pages to query from the API. If omitted, the script 
                 will continue to query until all available pages are exhausted. Note, 
                 the script will always start with page 0""",
+        default=float('inf'),
     )
 
     pages_to_load = parser.parse_args().pages
