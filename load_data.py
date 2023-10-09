@@ -41,6 +41,12 @@ def test_expected_response(field_name, job_id, data):
                 f"Job ID {job_id} has more than the expected number of values in the `levels` field"
             )
 
+    elif field_name == "categories":
+        if len(data) > 1:
+            warnings.warn(
+                f"Job ID {job_id} has more than the expected number of values in the `categories` field"
+            )
+
 
 def query_api(num_pages_to_query=None):
     # With more time, I'd want to work on breaking this function into some smaller parts
@@ -84,7 +90,6 @@ def query_api(num_pages_to_query=None):
         for result in results:
             location_list = []
             is_remote_eligible = False
-            category_list = []
 
             for location in result["locations"]:
                 # Pop `Flexible / Remote` from the list of locations and set as a bool
@@ -92,9 +97,6 @@ def query_api(num_pages_to_query=None):
                     is_remote_eligible = True
                     continue
                 location_list.append(location["name"])
-
-            for category in result["categories"]:
-                category_list.append(category["name"])
 
             company_object = {
                 "company_id": result["company"]["id"],
@@ -108,6 +110,7 @@ def query_api(num_pages_to_query=None):
             # and `levels` fields added tests to insure assumptions hold
             test_expected_response("refs", job_id, result["refs"])
             test_expected_response("levels", job_id, result["levels"])
+            test_expected_response("categories", job_id, result["categories"])
 
             job_object = {
                 "job_id": job_id,
@@ -119,10 +122,13 @@ def query_api(num_pages_to_query=None):
                 "model_type": result["model_type"],
                 "locations": location_list,
                 "is_remote_eligible": is_remote_eligible,
-                "categories": category_list,
+                "category": result["categories"][0].get("name")
+                if result["categories"]
+                else None,
                 "landing_page": result["refs"]["landing_page"],
                 "company_id": company_object["company_id"],
-                "levels": result["levels"][0],
+                "level": result["levels"][0].get("name"),
+                "level_short_name": result["levels"][0].get("short_name"),
             }
 
             jobs_list.append(job_object)
@@ -165,7 +171,7 @@ if __name__ == "__main__":
         help="""The number of pages to query from the API. If omitted, the script 
                 will continue to query until all available pages are exhausted. Note, 
                 the script will always start with page 0""",
-        default=float('inf'),
+        default=float("inf"),
     )
 
     pages_to_load = parser.parse_args().pages
